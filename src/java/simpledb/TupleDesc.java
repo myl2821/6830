@@ -7,8 +7,8 @@ import java.util.*;
  * TupleDesc describes the schema of a tuple.
  */
 public class TupleDesc implements Serializable {
-    private Type[] typeAr;
-    private String[] fieldAr;
+    private Type[] _typeAr;
+    private String[] _fieldAr;
 
     /**
      * A help class to facilitate organizing the information of each field
@@ -45,22 +45,21 @@ public class TupleDesc implements Serializable {
     public Iterator<TDItem> iterator() {
         // some code goes here
 
-        Iterator<TDItem> it = new Iterator<TDItem>() {
+        return new Iterator<TDItem>() {
 
             private int currentIndex = 0;
 
             @Override
             public boolean hasNext() {
-                return currentIndex < typeAr.length;
+                return currentIndex < _typeAr.length;
             }
 
             @Override
             public TDItem next() {
-                String field = fieldAr == null ? null : fieldAr[currentIndex];
-                return new TDItem(typeAr[currentIndex++], field);
+                String field = _fieldAr == null ? null : _fieldAr[currentIndex];
+                return new TDItem(_typeAr[currentIndex++], field);
             }
         };
-        return it;
     }
 
     private static final long serialVersionUID = 1L;
@@ -83,8 +82,8 @@ public class TupleDesc implements Serializable {
             throw new IllegalArgumentException();
         }
 
-        this.typeAr = typeAr;
-        this.fieldAr = fieldAr;
+        _typeAr = typeAr;
+        _fieldAr = fieldAr;
     }
 
     /**
@@ -102,7 +101,7 @@ public class TupleDesc implements Serializable {
             throw new IllegalArgumentException();
         }
 
-        this.typeAr = typeAr;
+        _typeAr = typeAr;
     }
 
     /**
@@ -110,7 +109,7 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return typeAr.length;
+        return _typeAr.length;
     }
 
     /**
@@ -129,11 +128,11 @@ public class TupleDesc implements Serializable {
             throw new NoSuchElementException();
         }
 
-        if (fieldAr == null) {
+        if (_fieldAr == null) {
             return null;
         }
 
-        return fieldAr[i];
+        return _fieldAr[i];
     }
 
     /**
@@ -153,7 +152,7 @@ public class TupleDesc implements Serializable {
             throw new NoSuchElementException();
         }
 
-        return typeAr[i];
+        return _typeAr[i];
     }
 
     /**
@@ -167,11 +166,11 @@ public class TupleDesc implements Serializable {
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
-        if (fieldAr == null)
+        if (_fieldAr == null)
             throw new NoSuchElementException();
 
-        for (int i = 0; i < typeAr.length; i++) {
-            if (fieldAr[i].equals(name)) {
+        for (int i = 0; i < _typeAr.length; i++) {
+            if (_fieldAr[i].equals(name)) {
                 return i;
             }
         }
@@ -187,7 +186,7 @@ public class TupleDesc implements Serializable {
         // some code goes here
 
         int sum = 0;
-        for (Type t : typeAr) {
+        for (Type t : _typeAr) {
             sum += t.getLen();
         }
         return sum;
@@ -206,14 +205,14 @@ public class TupleDesc implements Serializable {
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
 
-        Type[] typeAr = new Type[td1.typeAr.length + td2.typeAr.length];
-        String[] fieldAr = new String[td1.fieldAr.length + td2.fieldAr.length];
+        Type[] typeAr = new Type[td1._typeAr.length + td2._typeAr.length];
+        String[] fieldAr = new String[td1._fieldAr.length + td2._fieldAr.length];
 
-        System.arraycopy(td1.typeAr, 0, typeAr, 0, td1.typeAr.length);
-        System.arraycopy(td2.typeAr, 0, typeAr, td1.typeAr.length, td2.typeAr.length);
+        System.arraycopy(td1._typeAr, 0, typeAr, 0, td1._typeAr.length);
+        System.arraycopy(td2._typeAr, 0, typeAr, td1._typeAr.length, td2._typeAr.length);
 
-        System.arraycopy(td1.fieldAr, 0, fieldAr, 0, td1.fieldAr.length);
-        System.arraycopy(td2.fieldAr, 0, fieldAr, td1.fieldAr.length, td2.fieldAr.length);
+        System.arraycopy(td1._fieldAr, 0, fieldAr, 0, td1._fieldAr.length);
+        System.arraycopy(td2._fieldAr, 0, fieldAr, td1._fieldAr.length, td2._fieldAr.length);
         return new TupleDesc(typeAr, fieldAr);
     }
 
@@ -246,7 +245,7 @@ public class TupleDesc implements Serializable {
         }
 
         for (int i = 0; i < this.numFields(); i++) {
-            if (!this.typeAr[i].equals(another.typeAr[i])) {
+            if (!this._typeAr[i].equals(another._typeAr[i])) {
                 return false;
             }
         }

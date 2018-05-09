@@ -1,7 +1,6 @@
 package simpledb;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -11,9 +10,9 @@ import java.util.NoSuchElementException;
  * with the data for each field.
  */
 public class Tuple implements Serializable {
-    private RecordId rid;
-    private TupleDesc td;
-    private Field[] fields;
+    private RecordId _rid;
+    private TupleDesc _td;
+    private Field[] _fields;
     private static final long serialVersionUID = 1L;
 
     /**
@@ -26,8 +25,8 @@ public class Tuple implements Serializable {
     public Tuple(TupleDesc td) {
         // some code goes here
 
-        this.td = td;
-        this.fields = new Field[td.numFields()];
+        _td = td;
+        _fields = new Field[td.numFields()];
     }
 
     /**
@@ -36,7 +35,7 @@ public class Tuple implements Serializable {
     public TupleDesc getTupleDesc() {
         // some code goes here
 
-        return td;
+        return _td;
     }
 
     /**
@@ -46,7 +45,7 @@ public class Tuple implements Serializable {
     public RecordId getRecordId() {
         // some code goes here
 
-        return rid;
+        return _rid;
     }
 
     /**
@@ -58,7 +57,7 @@ public class Tuple implements Serializable {
     public void setRecordId(RecordId rid) {
         // some code goes here
 
-        this.rid = rid;
+        _rid = rid;
     }
 
     /**
@@ -72,11 +71,11 @@ public class Tuple implements Serializable {
     public void setField(int i, Field f) {
         // some code goes here
 
-        if (i >= fields.length) {
+        if (i >= _fields.length) {
             throw new IndexOutOfBoundsException();
         }
 
-        fields[i] = f;
+        _fields[i] = f;
     }
 
     /**
@@ -88,10 +87,10 @@ public class Tuple implements Serializable {
     public Field getField(int i) {
         // some code goes here
 
-        if (i >= fields.length) {
+        if (i >= _fields.length) {
             throw new NoSuchElementException();
         }
-        return fields[i];
+        return _fields[i];
     }
 
     /**
@@ -106,9 +105,9 @@ public class Tuple implements Serializable {
         // some code goes here
 
         String s = "";
-        for (int i = 0; i < fields.length; i++) {
-            s += fields[i].toString();
-            if (i != fields.length - 1)
+        for (int i = 0; i < _fields.length; i++) {
+            s += _fields[i].toString();
+            if (i != _fields.length - 1)
                 s += "\t";
         }
         return s;
@@ -122,23 +121,19 @@ public class Tuple implements Serializable {
     {
         // some code goes here
 
-        Iterator<Field> it = new Iterator<Field>() {
+        return new Iterator<Field>() {
 
             private int currentIndex = 0;
             @Override
             public boolean hasNext() {
-                if (currentIndex < fields.length)
-                    return true;
-
-                return false;
+                return currentIndex < _fields.length;
             }
 
             @Override
             public Field next() {
-                return fields[currentIndex++];
+                return _fields[currentIndex++];
             }
         };
-        return it;
     }
 
     /**
@@ -148,6 +143,6 @@ public class Tuple implements Serializable {
     {
         // some code goes here
 
-        this.td = td;
+        _td = td;
     }
 }

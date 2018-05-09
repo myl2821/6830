@@ -67,8 +67,9 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
 
+        int tupleSize = td.getSize();
+        return (BufferPool.getPageSize()*8) / (tupleSize * 8 + 1);
     }
 
     /**
@@ -76,10 +77,9 @@ public class HeapPage implements Page {
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
     private int getHeaderSize() {        
-        
         // some code goes here
-        return 0;
-                 
+
+        return (getNumTuples() + 7) / 8;
     }
     
     /** Return a view of this page before it was modified
@@ -111,8 +111,9 @@ public class HeapPage implements Page {
      * @return the PageId associated with this page.
      */
     public HeapPageId getId() {
-    // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        // some code goes here
+
+        return pid;
     }
 
     /**
@@ -282,7 +283,13 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int bc = 0;
+        for (Byte b : header) {
+            for (int i = 0; i < 8; i++) {
+                bc += (b >> i) & 1;
+            }
+        }
+        return getNumTuples() - bc;
     }
 
     /**
@@ -290,7 +297,8 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+
+        return (header[i/8] >> (i%8) & 1) == 1;
     }
 
     /**
@@ -307,7 +315,29 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+
+        return new Iterator<Tuple>() {
+            private int _currentTupleIndex = 0;
+            private int _currentConsumed = 0;
+            private final int _total = getNumTuples() - getNumEmptySlots();
+
+            @Override
+            public boolean hasNext() {
+                return _currentConsumed < _total;
+            }
+
+            @Override
+            public Tuple next() {
+                for (int i = _currentTupleIndex; i < getNumTuples(); i++) {
+                    if (isSlotUsed(i)) {
+                        _currentConsumed++;
+                        return tuples[_currentTupleIndex++];
+                    }
+                }
+
+                throw new IndexOutOfBoundsException();
+            }
+        };
     }
 
 }

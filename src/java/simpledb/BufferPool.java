@@ -16,6 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Threadsafe, all fields are final
  */
 public class BufferPool {
+    private int _numPages;
+    private ConcurrentHashMap<PageId, Page> _pages;
+    private ConcurrentHashMap<PageId, TransactionId> _pageLock;
+
+
     /** Bytes per page, including header. */
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
@@ -33,6 +38,9 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+
+        _numPages = numPages;
+        _pages = new ConcurrentHashMap<>();
     }
     
     public static int getPageSize() {
@@ -64,10 +72,28 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+
+        // TODO: Acquire lock first, which should be managed by LoackManager
+
+        DbFile dbfile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page page = dbfile.readPage(pid);
+
+        if (!_pages.containsKey(pid)) {
+            if (_pages.size() >= _numPages) {
+                evictPage();
+            }
+
+            _pages.put(pid, page);
+        }
+
+        if (perm == Permissions.READ_WRITE) {
+            _pages.get(pid).markDirty(true, tid);
+        }
+
+        return _pages.get(pid);
     }
 
     /**
@@ -79,7 +105,7 @@ public class BufferPool {
      * @param tid the ID of the transaction requesting the unlock
      * @param pid the ID of the page to unlock
      */
-    public  void releasePage(TransactionId tid, PageId pid) {
+    public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2
     }

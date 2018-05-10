@@ -78,14 +78,13 @@ public class BufferPool {
 
         // TODO: Acquire lock first, which should be managed by LoackManager
 
-        DbFile dbfile = Database.getCatalog().getDatabaseFile(pid.getTableId());
-        Page page = dbfile.readPage(pid);
-
         if (!_pages.containsKey(pid)) {
             if (_pages.size() >= _numPages) {
                 evictPage();
             }
 
+            DbFile dbfile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = dbfile.readPage(pid);
             _pages.put(pid, page);
         }
 

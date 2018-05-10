@@ -232,6 +232,23 @@
         </RunJunit>
     </target>
 
+    <target name="testlab1" depends="testcompile" description="Run tests for lab1">
+        <RunJunit>
+	    <batchtest>
+		<fileset dir="${build.test}">
+		    <include name="simpledb/TupleTest.class"/>
+		    <include name="simpledb/TupleDescTest.class"/>
+		    <include name="simpledb/CatalogTest.class"/>
+		    <include name="simpledb/HeapPageIdTest.class"/>
+		    <include name="simpledb/RecordIdTest.class"/>
+		    <include name="simpledb/HeapPageReadTest.class"/>
+		    <include name="simpledb/HeapFileReadTest.class"/>
+		    <include name="simpledb/systemtest/ScanTest.class"/>
+		</fileset>
+	    </batchtest>
+        </RunJunit>
+    </target>
+
     <target name="runtest" depends="testcompile"
             description="Runs the test you specify on the command line with -Dtest=">
         <!-- Check for -Dtest command line argument -->

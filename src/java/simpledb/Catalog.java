@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -17,7 +18,8 @@ import java.util.*;
  * @Threadsafe
  */
 public class Catalog {
-    private ArrayList<TableDesc> _tables;
+    private ConcurrentHashMap<Integer, TableDesc> _tableIDMap;
+    private ConcurrentHashMap<String, TableDesc> _tableNameMap;
 
 
     private static class TableDesc {
@@ -39,7 +41,8 @@ public class Catalog {
     public Catalog() {
         // some code goes here
 
-        _tables = new ArrayList<>();
+        _tableIDMap = new ConcurrentHashMap<>();
+        _tableNameMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -54,20 +57,13 @@ public class Catalog {
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
 
-        for (int i = 0; i < _tables.size(); i++) {
-            // check for id conflict
-            if (_tables.get(i).file.getId() == file.getId()) {
-                _tables.remove(i);
-                continue;
-            }
-
-            // check for name conflict
-            if (_tables.get(i).name.equals(name)) {
-                _tables.remove(i);
-            }
+        if (name == null || pkeyField == null) {
+            throw new IllegalArgumentException();
         }
 
-        _tables.add(new TableDesc(file, name, pkeyField));
+        TableDesc td = new TableDesc(file, name, pkeyField);
+        _tableIDMap.put(file.getId(), td);
+        _tableNameMap.put(name, td);
     }
 
     public void addTable(DbFile file, String name) {
@@ -92,10 +88,8 @@ public class Catalog {
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
 
-        for (TableDesc table : _tables) {
-            if (Objects.equals(table.name, name)) {
-                return table.file.getId();
-            }
+        if (name != null && _tableNameMap.containsKey(name)) {
+            return _tableNameMap.get(name).file.getId();
         }
 
         throw new NoSuchElementException();
@@ -110,10 +104,8 @@ public class Catalog {
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
 
-        for (TableDesc td : _tables) {
-            if (td.file.getId() == tableid) {
-                return td.file.getTupleDesc();
-            }
+        if (_tableIDMap.containsKey(tableid)) {
+            return _tableIDMap.get(tableid).file.getTupleDesc();
         }
 
         throw new NoSuchElementException();
@@ -128,10 +120,8 @@ public class Catalog {
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
 
-        for (TableDesc td : _tables) {
-            if (td.file.getId() == tableid) {
-                return td.file;
-            }
+        if (_tableIDMap.containsKey(tableid)) {
+            return _tableIDMap.get(tableid).file;
         }
 
         throw new NoSuchElementException();
@@ -139,11 +129,9 @@ public class Catalog {
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        for (TableDesc td : _tables) {
 
-            if (td.file.getId() == tableid) {
-                return td.pkeyField;
-            }
+        if (_tableIDMap.containsKey(tableid)) {
+            return _tableIDMap.get(tableid).pkeyField;
         }
 
         throw new NoSuchElementException();
@@ -153,18 +141,17 @@ public class Catalog {
         // some code goes here
 
         return new Iterator<Integer>() {
-
-            private int currentIndex = 0;
+            private Iterator<Map.Entry<Integer, TableDesc>> it =
+                    _tableIDMap.entrySet().iterator();
 
             @Override
             public boolean hasNext() {
-                return currentIndex < _tables.size();
-
+                return it.hasNext();
             }
 
             @Override
             public Integer next() {
-                return _tables.get(currentIndex++).file.getId();
+                return it.next().getKey();
             }
         };
     }
@@ -172,11 +159,8 @@ public class Catalog {
     public String getTableName(int tableid) {
         // some code goes here
 
-        for (TableDesc td : _tables) {
-
-            if (td.file.getId() == tableid) {
-                return td.name;
-            }
+        if (_tableIDMap.containsKey(tableid)) {
+            return _tableIDMap.get(tableid).name;
         }
 
         throw new NoSuchElementException();
@@ -186,7 +170,8 @@ public class Catalog {
     public void clear() {
         // some code goes here
 
-        _tables.clear();
+        _tableIDMap.clear();
+        _tableNameMap.clear();
     }
 
     /**

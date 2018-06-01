@@ -7,8 +7,8 @@ import java.util.*;
  * TupleDesc describes the schema of a tuple.
  */
 public class TupleDesc implements Serializable {
-    private Type[] _typeAr;
-    private String[] _fieldAr;
+    public Type[] _typeAr;
+    public String[] _fieldAr;
 
     /**
      * A help class to facilitate organizing the information of each field
@@ -78,7 +78,7 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
 
-        if (typeAr == null || fieldAr == null || typeAr.length != fieldAr.length) {
+        if (typeAr == null || (fieldAr != null && typeAr.length != fieldAr.length)) {
             throw new IllegalArgumentException();
         }
 
@@ -205,14 +205,17 @@ public class TupleDesc implements Serializable {
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
 
-        Type[] typeAr = new Type[td1._typeAr.length + td2._typeAr.length];
-        String[] fieldAr = new String[td1._fieldAr.length + td2._fieldAr.length];
+        Type[] typeAr = new Type[td1.numFields() + td2.numFields()];
+        String[] fieldAr = null;
 
-        System.arraycopy(td1._typeAr, 0, typeAr, 0, td1._typeAr.length);
-        System.arraycopy(td2._typeAr, 0, typeAr, td1._typeAr.length, td2._typeAr.length);
+        System.arraycopy(td1._typeAr, 0, typeAr, 0, td1.numFields());
+        System.arraycopy(td2._typeAr, 0, typeAr, td1.numFields(), td2.numFields());
 
-        System.arraycopy(td1._fieldAr, 0, fieldAr, 0, td1._fieldAr.length);
-        System.arraycopy(td2._fieldAr, 0, fieldAr, td1._fieldAr.length, td2._fieldAr.length);
+        if (td1._fieldAr != null && td2._fieldAr != null) {
+            fieldAr = new String[td1.numFields() + td2.numFields()];
+            System.arraycopy(td1._fieldAr, 0, fieldAr, 0, td1.numFields());
+            System.arraycopy(td2._fieldAr, 0, fieldAr, td1.numFields(), td2.numFields());
+        }
         return new TupleDesc(typeAr, fieldAr);
     }
 

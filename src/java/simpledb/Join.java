@@ -7,6 +7,10 @@ import java.util.*;
  */
 public class Join extends Operator {
 
+    private JoinPredicate _p;
+    private OpIterator _child1;
+    private OpIterator _child2;
+    private TupleDesc _td;
     private static final long serialVersionUID = 1L;
 
     /**
@@ -22,11 +26,17 @@ public class Join extends Operator {
      */
     public Join(JoinPredicate p, OpIterator child1, OpIterator child2) {
         // some code goes here
+
+        _p = p;
+        _child1 = child1;
+        _child2 = child2;
+        _td = TupleDesc.merge(child1.getTupleDesc(), child2.getTupleDesc());
     }
 
     public JoinPredicate getJoinPredicate() {
         // some code goes here
-        return null;
+
+        return _p;
     }
 
     /**
@@ -36,7 +46,8 @@ public class Join extends Operator {
      * */
     public String getJoinField1Name() {
         // some code goes here
-        return null;
+
+        return _child1.getTupleDesc().getFieldName(_p.getField1());
     }
 
     /**
@@ -46,7 +57,8 @@ public class Join extends Operator {
      * */
     public String getJoinField2Name() {
         // some code goes here
-        return null;
+
+        return _child1.getTupleDesc().getFieldName(_p.getField1());
     }
 
     /**
@@ -55,20 +67,35 @@ public class Join extends Operator {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+
+        return _td;
     }
 
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+
+        _child1.open();
+        _child2.open();
+        checkAnyChildEmpty();
+        super.open();
     }
 
     public void close() {
         // some code goes here
+
+        _child1.close();
+        _child2.close();
+        super.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+
+        _child1.rewind();
+        _child2.rewind();
+        super.close();
+        super.open();
     }
 
     /**
@@ -91,18 +118,74 @@ public class Join extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
+
+
+        Tuple[] pair = null;
+        while((pair = getNextPair()) != null) {
+            if (_p.filter(pair[0], pair[1])) {
+                Tuple tuple = new Tuple(getTupleDesc());
+
+                int cursor = 0;
+
+                for (Iterator<Field> fields = pair[0].fields(); fields.hasNext(); ) {
+                    tuple.setField(cursor++, fields.next());
+                }
+
+                for (Iterator<Field> fields = pair[1].fields(); fields.hasNext(); ) {
+                    tuple.setField(cursor++, fields.next());
+                }
+
+                return tuple;
+            }
+        }
+
         return null;
+    }
+
+    private Boolean _childEmpty;
+    private void checkAnyChildEmpty() throws TransactionAbortedException, DbException {
+        _childEmpty = !(_child1.hasNext() && _child2.hasNext());
+    }
+
+    private Tuple _t1;
+    private Tuple[] getNextPair() throws TransactionAbortedException, DbException {
+        if (_childEmpty)
+            return null;
+
+        // Initialize
+        if (_t1 == null) {
+            _t1 = _child1.next();
+        }
+
+        if (_child2.hasNext()) {
+            Tuple[] pair = {_t1, _child2.next()};
+            return pair;
+        } else {
+            // time to do next loop
+            if (!_child1.hasNext()) {
+                return null;
+            }
+            _child2.rewind();
+            _t1 = _child1.next();
+            Tuple[] pair = {_t1, _child2.next()};
+
+            return pair;
+        }
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+
+        OpIterator[] children = { _child1, _child2 };
+        return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
-    }
 
+        _child1 = children[0];
+        _child2 = children[1];
+    }
 }

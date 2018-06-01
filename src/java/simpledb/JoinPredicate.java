@@ -8,6 +8,10 @@ import java.io.Serializable;
  */
 public class JoinPredicate implements Serializable {
 
+    private int _field1;
+    private Predicate.Op _op;
+    private int _field2;
+
     private static final long serialVersionUID = 1L;
 
     /**
@@ -26,6 +30,10 @@ public class JoinPredicate implements Serializable {
      */
     public JoinPredicate(int field1, Predicate.Op op, int field2) {
         // some code goes here
+
+        _field1 = field1;
+        _op = op;
+        _field2 = field2;
     }
 
     /**
@@ -36,24 +44,28 @@ public class JoinPredicate implements Serializable {
      */
     public boolean filter(Tuple t1, Tuple t2) {
         // some code goes here
-        return false;
+
+        return t1.getField(_field1).compare(_op, t2.getField(_field2));
     }
     
     public int getField1()
     {
         // some code goes here
-        return -1;
+
+        return _field1;
     }
     
     public int getField2()
     {
         // some code goes here
-        return -1;
+
+        return _field2;
     }
     
     public Predicate.Op getOperator()
     {
         // some code goes here
-        return null;
+
+        return _op;
     }
 }

@@ -238,8 +238,19 @@ public class HeapFile implements DbFile {
             if (_currentTupleIter != null && _currentTupleIter.hasNext())
                 return true;
 
-            // next Page
-            return _currentPageIndex < _hf.numPages();
+            // Open next Page
+            // N.B. there may be blank page between tuples as a hole
+            // due to delete
+            while (_currentPageIndex < _hf.numPages()) {
+                PageId pid = new HeapPageId(_hf.getId(), _currentPageIndex);
+                HeapPage p = (HeapPage) Database.getBufferPool()
+                        .getPage(_tid, pid, Permissions.READ_ONLY);
+                if (p.iterator().hasNext()) {
+                    return true;
+                }
+                _currentPageIndex++;
+            }
+            return false;
         }
 
         @Override

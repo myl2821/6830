@@ -1,10 +1,18 @@
 package simpledb;
 
+import java.io.IOException;
+
 /**
  * Inserts tuples read from the child operator into the tableId specified in the
  * constructor
  */
 public class Insert extends Operator {
+
+    private TransactionId _txid;
+    private OpIterator _child;
+    private int _tableId;
+    private int _cnt;
+    private boolean _passed;
 
     private static final long serialVersionUID = 1L;
 
@@ -24,23 +32,42 @@ public class Insert extends Operator {
     public Insert(TransactionId t, OpIterator child, int tableId)
             throws DbException {
         // some code goes here
+
+        _txid = t;
+        _tableId = tableId;
+        _child = child;
+        _passed = false;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+
+        Type [] typeAr = { Type.INT_TYPE };
+        return new TupleDesc(typeAr);
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+
+        _child.open();
+        _cnt = 0;
+        _passed = false;
+        super.open();
     }
 
     public void close() {
         // some code goes here
+
+        super.close();
+        _child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+
+        _child.rewind();
+        _cnt = 0;
+        _passed = false;
     }
 
     /**
@@ -58,17 +85,42 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        return null;
+
+        if (_passed) {
+            return null;
+        }
+
+        while (_child.hasNext()) {
+            Tuple t = _child.next();
+            try {
+                Database.getBufferPool().insertTuple(_txid, _tableId, t);
+                _cnt += 1;
+
+
+            } catch (IOException e)  {
+                throw new DbException("Insert");
+            }
+        }
+
+        TupleDesc td = getTupleDesc();
+        Tuple tuple = new Tuple(td);
+        tuple.setField(0, new IntField(_cnt));
+        _passed = true;
+        return tuple;
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+
+        OpIterator[] children = { _child };
+        return children;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+
+        _child = children[0];
     }
 }

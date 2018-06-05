@@ -170,6 +170,9 @@
 		    <include name="simpledb/StringAggregateTest.class"/>
 		    <include name="simpledb/StringAggregatorTest.class"/>
 		    <include name="simpledb/IntegerAggregatorTest.class"/>
+		    <include name="simpledb/HeapPageWriteTest.class"/>
+		    <include name="simpledb/HeapFileWriteTest.class"/>
+		    <include name="simpledb/BufferPoolWriteTest.class"/>
 		    <include name="simpledb/systemtest/FilterTest.class"/>
 		    <include name="simpledb/systemtest/JoinTest.class"/>
 		    <include name="simpledb/systemtest/AggregateTest.class"/>

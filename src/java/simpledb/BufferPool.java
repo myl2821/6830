@@ -2,6 +2,7 @@ package simpledb;
 
 import java.io.*;
 
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -17,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BufferPool {
     private int _numPages;
-    private ConcurrentHashMap<PageId, Page> _pages;
+    private ConcurrentHashMap<PageId, Page> _pages; // Stands for Buffer Pool
     private ConcurrentHashMap<PageId, TransactionId> _pageLock;
 
 
@@ -76,16 +77,14 @@ public class BufferPool {
         throws TransactionAbortedException, DbException {
         // some code goes here
 
-        // TODO: Acquire lock first, which should be managed by LoackManager
+        // TODO: Acquire lock first, which should be managed by LockManager
 
         if (!_pages.containsKey(pid)) {
-            if (_pages.size() >= _numPages) {
-                evictPage();
-            }
-
+            // Read Page from File
             DbFile dbfile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             Page page = dbfile.readPage(pid);
-            _pages.put(pid, page);
+
+            putAndEvict(page);
         }
 
         if (perm == Permissions.READ_WRITE) {
@@ -157,7 +156,15 @@ public class BufferPool {
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        // not necessary for lab1
+
+        DbFile f = Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> dpList = f.insertTuple(tid, t);
+
+        // mark dirty pages
+        for (Page dp : dpList) {
+            dp.markDirty(true, tid);
+            putAndEvict(dp);
+        }
     }
 
     /**
@@ -176,7 +183,15 @@ public class BufferPool {
     public  void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        // not necessary for lab1
+
+        DbFile f = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        ArrayList<Page> dpList = f.deleteTuple(tid, t);
+
+        // mark dirty pages
+        for (Page dp : dpList) {
+            dp.markDirty(true, tid);
+            putAndEvict(dp);
+        }
     }
 
     /**
@@ -186,8 +201,6 @@ public class BufferPool {
      */
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
-        // not necessary for lab1
-
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -228,4 +241,16 @@ public class BufferPool {
         // not necessary for lab1
     }
 
+    /**
+     * Insert or Update a specific page in BufferPool.
+     * Will Evict a page from pool if the pool is full and the page not cached in it.
+     * @param p the page to insert into BufferPool
+     * @throws DbException
+     */
+    private synchronized  void putAndEvict(Page p) throws DbException {
+        if (!_pages.containsKey(p.getId()) && _pages.size() >= _numPages) {
+            evictPage();
+        }
+        _pages.put(p.getId(), p);
+    }
 }

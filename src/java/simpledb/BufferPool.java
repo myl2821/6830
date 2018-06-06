@@ -3,6 +3,7 @@ package simpledb;
 import java.io.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BufferPool {
     private int _numPages;
+    private LinkedHashMap<PageId, Boolean> _lru; // LRU Cache
     private ConcurrentHashMap<PageId, Page> _pages; // Stands for Buffer Pool
     private ConcurrentHashMap<PageId, TransactionId> _pageLock;
 
@@ -42,6 +44,7 @@ public class BufferPool {
 
         _numPages = numPages;
         _pages = new ConcurrentHashMap<>();
+        _lru = new LinkedHashMap<>();
     }
     
     public static int getPageSize() {
@@ -214,6 +217,9 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+
+        _lru.remove(pid);
+        _pages.remove(pid);
     }
 
     /**
@@ -223,6 +229,22 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+
+        Page page = _pages.get(pid);
+        if (page == null) {
+            return;
+        }
+
+        // Write data into disk
+        byte[] pageData = page.getPageData();
+        HeapFile dbFile = (HeapFile) Database.getCatalog().getDatabaseFile(pid.getTableId());
+        RandomAccessFile raf = new RandomAccessFile(dbFile.getFile(), "rw");
+        raf.seek(pageSize * pid.getPageNumber());
+        raf.write(pageData);
+        raf.close();
+
+        // mark it as clean page
+        page.markDirty(false, null);
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -238,7 +260,15 @@ public class BufferPool {
      */
     private synchronized  void evictPage() throws DbException {
         // some code goes here
-        // not necessary for lab1
+
+        PageId pid = _lru.keySet().iterator().next();
+        try {
+            flushPage(pid);
+        } catch (IOException e) {
+            throw new DbException(e.getMessage());
+        }
+        _lru.remove(pid);
+        _pages.remove(pid);
     }
 
     /**
@@ -251,6 +281,11 @@ public class BufferPool {
         if (!_pages.containsKey(p.getId()) && _pages.size() >= _numPages) {
             evictPage();
         }
+        if (_lru.containsKey(p.getId())) {
+           _lru.remove(p.getId());
+        }
         _pages.put(p.getId(), p);
+        _lru.put(p.getId(), true);
     }
 }
+

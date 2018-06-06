@@ -179,6 +179,7 @@
 		    <include name="simpledb/systemtest/AggregateTest.class"/>
 		    <include name="simpledb/systemtest/InsertTest.class"/>
 		    <include name="simpledb/systemtest/DeleteTest.class"/>
+		    <include name="simpledb/systemtest/EvictionTest.class"/>
 		</fileset>
 	    </batchtest>
         </RunJunit>
